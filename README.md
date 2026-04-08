@@ -1,4 +1,4 @@
-# unlike-other-ai
+# yt
 
 Initial planning repository for a tool that fetches YouTube channel transcripts up to a requested limit.
 
