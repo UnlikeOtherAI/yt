@@ -106,8 +106,8 @@ export class VideosRepository {
   }
 
   public listByChannelId(channelId: number): VideoRecord[] {
-    return this.#database
-      .prepare<[number], VideoRow[]>(
+    const rows = this.#database
+      .prepare(
         `
         SELECT *
         FROM videos
@@ -115,13 +115,13 @@ export class VideosRepository {
         ORDER BY published_at DESC
       `
       )
-      .all(channelId)
-      .map(toVideoRecord);
+      .all(channelId) as unknown as VideoRow[];
+    return rows.map(toVideoRecord);
   }
 
   public listMissingTranscripts(channelId: number): VideoRecord[] {
-    return this.#database
-      .prepare<[number], VideoRow[]>(
+    const rows = this.#database
+      .prepare(
         `
         SELECT *
         FROM videos
@@ -130,8 +130,8 @@ export class VideosRepository {
         ORDER BY published_at DESC
       `
       )
-      .all(channelId)
-      .map(toVideoRecord);
+      .all(channelId) as unknown as VideoRow[];
+    return rows.map(toVideoRecord);
   }
 
   public setArticle(args: {

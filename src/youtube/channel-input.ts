@@ -9,6 +9,13 @@ export type ChannelInput =
   | { kind: "handle"; value: string }
   | { kind: "username"; value: string };
 
+export type ResolveChannelArgs = {
+  channelId?: string;
+  customUrl?: string;
+  handle?: string;
+  username?: string;
+};
+
 export const parseChannelInput = (input: string): ChannelInput => {
   const value = input.trim();
 
@@ -48,4 +55,17 @@ export const parseChannelInput = (input: string): ChannelInput => {
   }
 
   return { kind: "customUrl", value };
+};
+
+export const buildResolveChannelArgs = (input: ChannelInput): ResolveChannelArgs => {
+  switch (input.kind) {
+    case "channelId":
+      return { channelId: input.value };
+    case "customUrl":
+      return { customUrl: input.value };
+    case "handle":
+      return { handle: input.value };
+    case "username":
+      return { username: input.value };
+  }
 };

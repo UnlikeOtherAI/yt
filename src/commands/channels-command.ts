@@ -22,7 +22,7 @@ const addAction = async (options: ChannelOptions) => {
   writeHuman(`Added channel ${channel.channelName} (${channel.channelId}).`);
 };
 
-const removeAction = async (options: ChannelOptions) => {
+const removeAction = (options: ChannelOptions) => {
   if (!options.yes) {
     throw new Error("channels remove requires --yes.");
   }
@@ -44,7 +44,7 @@ const removeAction = async (options: ChannelOptions) => {
   writeHuman(`Removed channel ${options.channel} from local storage.`);
 };
 
-const untrackAction = async (options: ChannelOptions) => {
+const untrackAction = (options: ChannelOptions) => {
   const context = createAppContext();
   context.channelLifecycleService.untrack(options.channel);
   const result = {

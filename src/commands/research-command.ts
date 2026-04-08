@@ -45,7 +45,7 @@ const syncAction = async (options: SyncOptions) => {
     return;
   }
 
-  writeHuman(`Synced ${result.videos.length} videos.`);
+  writeHuman(`Synced ${String(result.videos.length)} videos.`);
 };
 
 export const registerResearchCommand = (program: Command) => {

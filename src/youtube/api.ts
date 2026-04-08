@@ -39,6 +39,10 @@ type ChannelItem = {
   };
 };
 
+type SearchItem = {
+  snippet?: { channelId?: string };
+};
+
 type ListResponse<T> = {
   items?: T[];
   nextPageToken?: string;
@@ -108,10 +112,15 @@ export class YoutubeApi {
       playlistId
     });
 
-    return {
-      items: response.items ?? [],
-      nextPageToken: response.nextPageToken
+    const result: { items: PlaylistItem[]; nextPageToken?: string } = {
+      items: response.items ?? []
     };
+
+    if (response.nextPageToken) {
+      result.nextPageToken = response.nextPageToken;
+    }
+
+    return result;
   }
 
   async getResolvedChannel(
@@ -142,13 +151,13 @@ export class YoutubeApi {
     }
 
     if (args.customUrl) {
-      const search = await this.#get<ListResponse<ChannelItem>>("search", {
+      const search = await this.#get<ListResponse<SearchItem>>("search", {
         maxResults: "1",
         part: "snippet",
         q: args.customUrl,
         type: "channel"
       });
-      const channelId = search.items?.[0]?.id;
+      const channelId = search.items?.[0]?.snippet?.channelId;
 
       if (channelId) {
         return this.getResolvedChannel({ channelId });
@@ -184,7 +193,7 @@ export class YoutubeApi {
           channelId,
           channelTitle,
           commentCount: numberFromString(item.statistics?.commentCount),
-          description: item.snippet.description ?? "",
+          description: item.snippet?.description ?? "",
           likeCount: numberFromString(item.statistics?.likeCount),
           metadataJson: JSON.stringify(item),
           publishedAt,

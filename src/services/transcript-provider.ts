@@ -1,15 +1,8 @@
 import { join } from "node:path";
 
 import { FsCache, fetchTranscript } from "youtube-transcript-plus";
-import {
-  YoutubeTranscriptDisabledError,
-  YoutubeTranscriptNotAvailableError,
-  YoutubeTranscriptNotAvailableLanguageError,
-  YoutubeTranscriptTooManyRequestError,
-  YoutubeTranscriptVideoUnavailableError
-} from "youtube-transcript-plus";
 
-import { FailureRecord, TranscriptResult } from "../types.js";
+import type { FailureRecord, TranscriptResult } from "../types.js";
 
 const cacheTtlMs = 24 * 60 * 60 * 1000;
 
@@ -44,7 +37,7 @@ export class TranscriptProvider {
   }
 
   public toFailure(error: unknown, videoId: string): FailureRecord {
-    if (error instanceof YoutubeTranscriptDisabledError) {
+    if (hasErrorName(error, "YoutubeTranscriptDisabledError")) {
       return {
         code: "TRANSCRIPT_DISABLED",
         message: error.message,
@@ -54,7 +47,7 @@ export class TranscriptProvider {
       };
     }
 
-    if (error instanceof YoutubeTranscriptNotAvailableError) {
+    if (hasErrorName(error, "YoutubeTranscriptNotAvailableError")) {
       return {
         code: "TRANSCRIPT_UNAVAILABLE",
         message: error.message,
@@ -64,7 +57,7 @@ export class TranscriptProvider {
       };
     }
 
-    if (error instanceof YoutubeTranscriptNotAvailableLanguageError) {
+    if (hasErrorName(error, "YoutubeTranscriptNotAvailableLanguageError")) {
       return {
         code: "TRANSCRIPT_LANGUAGE_UNAVAILABLE",
         message: error.message,
@@ -74,7 +67,7 @@ export class TranscriptProvider {
       };
     }
 
-    if (error instanceof YoutubeTranscriptTooManyRequestError) {
+    if (hasErrorName(error, "YoutubeTranscriptTooManyRequestError")) {
       return {
         code: "TRANSCRIPT_RATE_LIMITED",
         message: error.message,
@@ -84,7 +77,7 @@ export class TranscriptProvider {
       };
     }
 
-    if (error instanceof YoutubeTranscriptVideoUnavailableError) {
+    if (hasErrorName(error, "YoutubeTranscriptVideoUnavailableError")) {
       return {
         code: "VIDEO_UNAVAILABLE",
         message: error.message,
@@ -103,3 +96,8 @@ export class TranscriptProvider {
     };
   }
 }
+
+const hasErrorName = (
+  error: unknown,
+  name: string
+): error is Error & { name: string } => error instanceof Error && error.name === name;

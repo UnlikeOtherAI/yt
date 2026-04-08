@@ -11,7 +11,11 @@ export class AppError extends Error {
 
   public readonly details?: unknown;
 
-  public constructor(message: string, exitCode = EXIT_CODE.runtimeError, details?: unknown) {
+  public constructor(
+    message: string,
+    exitCode: number = EXIT_CODE.runtimeError,
+    details?: unknown
+  ) {
     super(message);
     this.name = "AppError";
     this.exitCode = exitCode;

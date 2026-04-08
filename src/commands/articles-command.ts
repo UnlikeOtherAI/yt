@@ -45,7 +45,7 @@ const generateAction = async (options: ArticleOptions) => {
     return;
   }
 
-  writeHuman(`Generated articles for up to ${result.videos.length} video(s).`);
+  writeHuman(`Generated articles for up to ${String(result.videos.length)} video(s).`);
 };
 
 export const registerArticlesCommand = (program: Command) => {

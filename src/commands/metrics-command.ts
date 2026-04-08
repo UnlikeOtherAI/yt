@@ -29,7 +29,7 @@ const refreshAction = async (options: MetricsOptions) => {
     return;
   }
 
-  writeHuman(`Refreshed metrics for ${result.channelCount} channel(s).`);
+  writeHuman(`Refreshed metrics for ${String(result.channelCount)} channel(s).`);
 };
 
 export const registerMetricsCommand = (program: Command) => {

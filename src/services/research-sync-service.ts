@@ -1,16 +1,16 @@
 import pLimit from "p-limit";
 
-import { AppError, EXIT_CODE } from "../errors.js";
+import { AppError } from "../errors.js";
 import type { Repositories } from "../repositories.js";
 import type { FailureRecord, VideoRecord } from "../types.js";
 import { toIsoNow } from "../utils/time.js";
-import { parseChannelInput } from "../youtube/channel-input.js";
+import { buildResolveChannelArgs, parseChannelInput } from "../youtube/channel-input.js";
 import type { YoutubeApi } from "../youtube/api.js";
 import { ArticleGenerator } from "./article-generator.js";
 import { TranscriptProvider } from "./transcript-provider.js";
 
 type SyncOptions = {
-  channelValue?: string;
+  channelValue: string | undefined;
   concurrency: number;
   generateArticles: boolean;
   limit: number;
@@ -153,12 +153,7 @@ export class ResearchSyncService {
 
   async #resolveAndUpsertChannel(channelValue: string) {
     const parsed = parseChannelInput(channelValue);
-    const resolved = await this.#youtubeApi.getResolvedChannel({
-      channelId: parsed.kind === "channelId" ? parsed.value : undefined,
-      customUrl: parsed.kind === "customUrl" ? parsed.value : undefined,
-      handle: parsed.kind === "handle" ? parsed.value : undefined,
-      username: parsed.kind === "username" ? parsed.value : undefined
-    });
+    const resolved = await this.#youtubeApi.getResolvedChannel(buildResolveChannelArgs(parsed));
 
     return this.#repositories.channels.upsert({
       channelHandle: resolved.channelHandle,
@@ -198,7 +193,7 @@ export class ResearchSyncService {
       });
     }
 
-    const pendingVideos = this.#repositories
+    const pendingVideos = this.#repositories.videos
       .listMissingTranscripts(channel.id)
       .slice(0, options.limit);
 
@@ -221,7 +216,7 @@ export class ResearchSyncService {
       )
     );
 
-    const readyVideos = this.#repositories
+    const readyVideos = this.#repositories.videos
       .listByChannelId(channel.id)
       .filter((video) => video.transcriptStatus === "ready")
       .slice(0, options.limit);

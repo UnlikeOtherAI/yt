@@ -105,11 +105,32 @@ If coverage verification fails:
 
 ## Suggested Model Usage
 
+- default model: `gemini-3.1-pro-preview`
 - one model call for chunk transformation
 - one model call for merge/cleanup if needed
 - one verification call for coverage checking
 
 Do not trust a single-pass rewrite for long transcripts.
+
+## Prompt Requirements
+
+The rewrite prompt must be framed as a fidelity-preservation task, not a
+summary task.
+
+The system instruction should explicitly forbid:
+
+- dropping any factual detail
+- dropping or softening opinions
+- removing examples, caveats, jokes, or speculation
+- compressing multiple claims into one vague sentence
+- adding outside context or inferred facts
+
+The instruction should also explicitly require:
+
+- preserving informational density
+- preserving stance and tone
+- preserving ambiguity where the speaker is ambiguous
+- returning article prose only
 
 ## CLI Implications
 

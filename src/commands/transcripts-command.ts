@@ -45,7 +45,7 @@ const fetchAction = async (options: TranscriptOptions) => {
     return;
   }
 
-  writeHuman(`Fetched ${result.videos.length} transcript(s).`);
+  writeHuman(`Fetched ${String(result.videos.length)} transcript(s).`);
 };
 
 export const registerTranscriptsCommand = (program: Command) => {

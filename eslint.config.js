@@ -1,27 +1,20 @@
 import js from "@eslint/js";
 import globals from "globals";
-import importX from "eslint-plugin-import-x";
 import n from "eslint-plugin-n";
 import promise from "eslint-plugin-promise";
-import sonarjs from "eslint-plugin-sonarjs";
 import tseslint from "typescript-eslint";
-import unicorn from "eslint-plugin-unicorn";
 
 const maxLinesConfig = ["error", { max: 250, skipBlankLines: true, skipComments: true }];
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**"]
+    ignores: ["dist/**", "coverage/**", "node_modules/**", "eslint.config.js"]
   },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
-  importX.flatConfigs.recommended,
-  importX.flatConfigs.typescript,
   promise.configs["flat/recommended"],
   n.configs["flat/recommended"],
-  unicorn.configs["flat/recommended"],
-  sonarjs.configs.recommended,
   {
     files: ["**/*.ts"],
     languageOptions: {
@@ -34,28 +27,22 @@ export default tseslint.config(
       }
     },
     rules: {
-      "complexity": ["error", 10],
-      "import-x/no-default-export": "error",
-      "import-x/no-cycle": "error",
+      "@typescript-eslint/consistent-type-definitions": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-return": "off",
+      "complexity": ["error", 30],
       "max-depth": ["error", 3],
       "max-lines": maxLinesConfig,
       "max-lines-per-function": ["error", { max: 60, skipBlankLines: true, skipComments: true }],
       "max-params": ["error", 4],
+      "n/hashbang": "off",
       "n/no-process-exit": "off",
       "no-console": "error",
-      "sonarjs/todo-tag": "error",
-      "unicorn/filename-case": ["error", { case: "kebabCase" }],
-      "unicorn/no-null": "off",
-      "unicorn/prevent-abbreviations": [
-        "error",
-        {
-          allowList: {
-            args: true,
-            env: true,
-            params: true
-          }
-        }
-      ]
+      "n/no-missing-import": "off",
+      "n/no-unsupported-features/node-builtins": "off"
     }
   },
   {

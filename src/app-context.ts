@@ -1,4 +1,5 @@
 import { loadConfig } from "./config.js";
+import type { SqliteDatabase } from "./db/client.js";
 import { createDatabase } from "./db/client.js";
 import { AppError, EXIT_CODE } from "./errors.js";
 import { createLogger } from "./logger.js";
@@ -10,7 +11,17 @@ import { ResearchSyncService } from "./services/research-sync-service.js";
 import { TranscriptProvider } from "./services/transcript-provider.js";
 import { YoutubeApi } from "./youtube/api.js";
 
-export const createAppContext = () => {
+export type AppContext = {
+  articleGenerator: ArticleGenerator;
+  channelLifecycleService: ChannelLifecycleService;
+  config: ReturnType<typeof loadConfig>;
+  database: SqliteDatabase;
+  logger: ReturnType<typeof createLogger>;
+  metricsRefreshService: MetricsRefreshService;
+  researchSyncService: ResearchSyncService;
+};
+
+export const createAppContext = (): AppContext => {
   const config = loadConfig();
   const logger = createLogger(config.logLevel);
   const database = createDatabase(config.databasePath);
@@ -26,7 +37,7 @@ export const createAppContext = () => {
 
   const youtubeApi = new YoutubeApi(youtubeApiKey);
   const transcriptProvider = new TranscriptProvider(config.dataDir);
-  const articleGenerator = new ArticleGenerator(config.geminiApiKey);
+  const articleGenerator = new ArticleGenerator(config.geminiApiKey, config.geminiModel);
 
   return {
     articleGenerator,
@@ -43,5 +54,3 @@ export const createAppContext = () => {
     )
   };
 };
-
-export type AppContext = ReturnType<typeof createAppContext>;

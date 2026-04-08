@@ -4,9 +4,11 @@ import dotenv from "dotenv";
 import { z } from "zod";
 
 dotenv.config();
+dotenv.config({ path: join(homedir(), ".yt", ".env"), override: false });
 
 const envSchema = z.object({
   GEMINI_API_KEY: z.string().trim().min(1).optional(),
+  GEMINI_MODEL: z.string().trim().min(1).default("gemini-3.1-pro-preview"),
   LOG_LEVEL: z.string().trim().min(1).default("info"),
   YOUTUBE_API_KEY: z.string().trim().min(1).optional(),
   YT_DATA_DIR: z.string().trim().min(1).optional()
@@ -15,9 +17,10 @@ const envSchema = z.object({
 export type AppConfig = {
   dataDir: string;
   databasePath: string;
-  geminiApiKey?: string;
+  geminiApiKey: string | undefined;
+  geminiModel: string;
   logLevel: string;
-  youtubeApiKey?: string;
+  youtubeApiKey: string | undefined;
 };
 
 export const loadConfig = (): AppConfig => {
@@ -28,6 +31,7 @@ export const loadConfig = (): AppConfig => {
     dataDir,
     databasePath: join(dataDir, "yt.sqlite"),
     geminiApiKey: env.GEMINI_API_KEY,
+    geminiModel: env.GEMINI_MODEL,
     logLevel: env.LOG_LEVEL,
     youtubeApiKey: env.YOUTUBE_API_KEY
   };

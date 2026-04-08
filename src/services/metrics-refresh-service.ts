@@ -1,6 +1,6 @@
 import { AppError } from "../errors.js";
 import type { Repositories } from "../repositories.js";
-import { toIsoNow, toSnapshotDate } from "../utils/time.js";
+import { toSnapshotDate } from "../utils/time.js";
 import { parseChannelInput } from "../youtube/channel-input.js";
 import type { YoutubeApi } from "../youtube/api.js";
 
@@ -41,35 +41,7 @@ export class MetricsRefreshService {
       });
 
       const videos = this.#repositories.videos.listByChannelId(channel.id);
-      const detailChunks = chunk(videos.map((video) => video.videoId), 50);
-
-      for (const detailChunk of detailChunks) {
-        const details = await this.#youtubeApi.getVideoDetails(detailChunk);
-
-        for (const detail of details) {
-          const video = this.#repositories.videos.findByVideoId(detail.videoId);
-
-          if (!video) {
-            continue;
-          }
-
-          this.#repositories.videos.updateMetrics({
-            commentCountLatest: detail.commentCount,
-            likeCountLatest: detail.likeCount,
-            updatedAt: snapshotAt,
-            videoId: detail.videoId,
-            viewCountLatest: detail.viewCount
-          });
-          this.#repositories.videos.createViewSnapshot({
-            commentCount: detail.commentCount,
-            likeCount: detail.likeCount,
-            snapshotAt,
-            snapshotDate,
-            videoId: video.id,
-            viewCount: detail.viewCount
-          });
-        }
-      }
+      await this.#refreshVideoMetrics(videos, snapshotAt, snapshotDate);
 
       this.#repositories.channels.markMetricsRefreshed(channel.channelId, snapshotAt);
     }
@@ -97,6 +69,50 @@ export class MetricsRefreshService {
     }
 
     return channel;
+  }
+
+  async #refreshVideoMetrics(
+    videos: ReturnType<Repositories["videos"]["listByChannelId"]>,
+    snapshotAt: string,
+    snapshotDate: string
+  ): Promise<void> {
+    const detailChunks = chunk(videos.map((video) => video.videoId), 50);
+    const storedVideos = new Map(videos.map((video) => [video.videoId, video] as const));
+
+    for (const detailChunk of detailChunks) {
+      const details = await this.#youtubeApi.getVideoDetails(detailChunk);
+
+      for (const detail of details) {
+        const video = storedVideos.get(detail.videoId);
+
+        if (video) {
+          this.#applyVideoMetrics(video.id, detail, snapshotAt, snapshotDate);
+        }
+      }
+    }
+  }
+
+  #applyVideoMetrics(
+    databaseVideoId: number,
+    detail: Awaited<ReturnType<YoutubeApi["getVideoDetails"]>>[number],
+    snapshotAt: string,
+    snapshotDate: string
+  ): void {
+    this.#repositories.videos.updateMetrics({
+      commentCountLatest: detail.commentCount,
+      likeCountLatest: detail.likeCount,
+      updatedAt: snapshotAt,
+      videoId: detail.videoId,
+      viewCountLatest: detail.viewCount
+    });
+    this.#repositories.videos.createViewSnapshot({
+      commentCount: detail.commentCount,
+      likeCount: detail.likeCount,
+      snapshotAt,
+      snapshotDate,
+      videoId: databaseVideoId,
+      viewCount: detail.viewCount
+    });
   }
 }
 

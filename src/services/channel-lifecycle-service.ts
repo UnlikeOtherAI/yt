@@ -1,7 +1,7 @@
 import { AppError } from "../errors.js";
 import type { Repositories } from "../repositories.js";
 import { toIsoNow } from "../utils/time.js";
-import { parseChannelInput } from "../youtube/channel-input.js";
+import { buildResolveChannelArgs, parseChannelInput } from "../youtube/channel-input.js";
 import type { YoutubeApi } from "../youtube/api.js";
 
 export class ChannelLifecycleService {
@@ -17,12 +17,7 @@ export class ChannelLifecycleService {
   public async add(channelValue: string) {
     const now = toIsoNow();
     const parsed = parseChannelInput(channelValue);
-    const resolved = await this.#youtubeApi.getResolvedChannel({
-      channelId: parsed.kind === "channelId" ? parsed.value : undefined,
-      customUrl: parsed.kind === "customUrl" ? parsed.value : undefined,
-      handle: parsed.kind === "handle" ? parsed.value : undefined,
-      username: parsed.kind === "username" ? parsed.value : undefined
-    });
+    const resolved = await this.#youtubeApi.getResolvedChannel(buildResolveChannelArgs(parsed));
 
     return this.#repositories.channels.upsert({
       channelHandle: resolved.channelHandle,

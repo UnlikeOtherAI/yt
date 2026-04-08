@@ -1,5 +1,3 @@
-import type { Statement } from "better-sqlite3";
-
 import type { SqliteDatabase } from "./client.js";
 import type { ChannelRecord } from "../types.js";
 
@@ -52,62 +50,36 @@ const toChannelRecord = (row: ChannelRow): ChannelRecord => ({
 export class ChannelsRepository {
   readonly #database: SqliteDatabase;
 
-  readonly #findByChannelIdStatement: Statement<[string], ChannelRow | undefined>;
-
-  readonly #listTrackedStatement: Statement<[], ChannelRow[]>;
-
-  readonly #upsertStatement: Statement<UpsertArgs>;
-
   public constructor(database: SqliteDatabase) {
     this.#database = database;
-    this.#findByChannelIdStatement = database.prepare(`
-      SELECT *
-      FROM channels
-      WHERE channel_id = ?
-      LIMIT 1
-    `);
-    this.#listTrackedStatement = database.prepare(`
-      SELECT *
-      FROM channels
-      WHERE is_tracked = 1
-      ORDER BY channel_name ASC
-    `);
-    this.#upsertStatement = database.prepare(`
-      INSERT INTO channels (
-        channel_id,
-        channel_name,
-        channel_handle,
-        channel_url,
-        uploads_playlist_id,
-        is_tracked,
-        created_at,
-        updated_at
-      ) VALUES (
-        @channelId,
-        @channelName,
-        @channelHandle,
-        @channelUrl,
-        @uploadsPlaylistId,
-        1,
-        @createdAt,
-        @updatedAt
-      )
-      ON CONFLICT(channel_id) DO UPDATE SET
-        channel_name = excluded.channel_name,
-        channel_handle = excluded.channel_handle,
-        channel_url = excluded.channel_url,
-        uploads_playlist_id = excluded.uploads_playlist_id,
-        updated_at = excluded.updated_at
-    `);
   }
 
   public findByChannelId(channelId: string): ChannelRecord | null {
-    const row = this.#findByChannelIdStatement.get(channelId);
+    const row = this.#database
+      .prepare(
+        `
+        SELECT *
+        FROM channels
+        WHERE channel_id = ?
+        LIMIT 1
+      `
+      )
+      .get(channelId) as ChannelRow | undefined;
     return row ? toChannelRecord(row) : null;
   }
 
   public listTracked(): ChannelRecord[] {
-    return this.#listTrackedStatement.all().map(toChannelRecord);
+    const rows = this.#database
+      .prepare(
+        `
+        SELECT *
+        FROM channels
+        WHERE is_tracked = 1
+        ORDER BY channel_name ASC
+      `
+      )
+      .all() as ChannelRow[];
+    return rows.map(toChannelRecord);
   }
 
   public markMetricsRefreshed(channelId: string, refreshedAt: string): void {
@@ -177,7 +149,37 @@ export class ChannelsRepository {
   }
 
   public upsert(args: UpsertArgs): ChannelRecord {
-    this.#upsertStatement.run(args);
+    this.#database
+      .prepare(
+        `
+        INSERT INTO channels (
+          channel_id,
+          channel_name,
+          channel_handle,
+          channel_url,
+          uploads_playlist_id,
+          is_tracked,
+          created_at,
+          updated_at
+        ) VALUES (
+          @channelId,
+          @channelName,
+          @channelHandle,
+          @channelUrl,
+          @uploadsPlaylistId,
+          1,
+          @createdAt,
+          @updatedAt
+        )
+        ON CONFLICT(channel_id) DO UPDATE SET
+          channel_name = excluded.channel_name,
+          channel_handle = excluded.channel_handle,
+          channel_url = excluded.channel_url,
+          uploads_playlist_id = excluded.uploads_playlist_id,
+          updated_at = excluded.updated_at
+      `
+      )
+      .run(args);
     const channel = this.findByChannelId(args.channelId);
 
     if (!channel) {

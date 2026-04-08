@@ -52,6 +52,7 @@ transformation.
 Rules:
 
 - generation is a post-processing stage after transcript retrieval
+- default generation model is `gemini-3.1-pro-preview`
 - raw transcript segments remain part of the structured result
 - the generator must optimize for coverage preservation, not brevity
 - timestamps may be omitted from article prose but must remain available in the
@@ -231,6 +232,7 @@ Environment variables expected:
 
 - `YOUTUBE_API_KEY`
 - `GEMINI_API_KEY`
+- `GEMINI_MODEL`
 - `LOG_LEVEL`
 
 Optional later:
