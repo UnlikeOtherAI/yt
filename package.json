@@ -3,12 +3,23 @@
   "version": "0.1.0",
   "description": "CLI for YouTube research ingestion, transcript storage, and article generation.",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "bin": {
     "yt": "./dist/cli.js"
   },
   "files": [
     "dist"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UnlikeOtherAI/yt.git"
+  },
+  "bugs": {
+    "url": "https://github.com/UnlikeOtherAI/yt/issues"
+  },
+  "homepage": "https://github.com/UnlikeOtherAI/yt#readme",
   "engines": {
     "node": ">=22.0.0"
   },

@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { FsCache, fetchTranscript } from "youtube-transcript-plus";
 
 import type { FailureRecord, TranscriptResult } from "../types.js";
+import { decodeHtmlEntities } from "../utils/html-decode.js";
 
 const cacheTtlMs = 24 * 60 * 60 * 1000;
 
@@ -26,7 +27,7 @@ export class TranscriptProvider {
     const segments = transcript.map((segment) => ({
       durationMs: Math.round(segment.duration * 1000),
       offsetMs: Math.round(segment.offset * 1000),
-      text: segment.text
+      text: decodeHtmlEntities(segment.text)
     }));
 
     return {

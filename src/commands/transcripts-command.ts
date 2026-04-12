@@ -1,10 +1,15 @@
-import { Command } from "commander";
+import { Command, Option } from "commander";
 
 import { createAppContext } from "../app-context.js";
 import { printJson } from "../utils/json-output.js";
 import { parsePositiveInteger, writeHuman } from "./command-helpers.js";
+import {
+  runVideoAction,
+  VIDEO_FORMATS,
+  type VideoFormat
+} from "./transcripts-video-action.js";
 
-type TranscriptOptions = {
+type FetchOptions = {
   channel: string;
   concurrency: string;
   json?: boolean;
@@ -12,7 +17,13 @@ type TranscriptOptions = {
   maxVideosInspected: string;
 };
 
-const fetchAction = async (options: TranscriptOptions) => {
+type VideoCommandOptions = {
+  format: string;
+  output?: string;
+  url: string;
+};
+
+const fetchAction = async (options: FetchOptions) => {
   const context = createAppContext();
   const result = await context.researchSyncService.sync({
     channelValue: options.channel,
@@ -48,10 +59,20 @@ const fetchAction = async (options: TranscriptOptions) => {
   writeHuman(`Fetched ${String(result.videos.length)} transcript(s).`);
 };
 
+const videoAction = async (options: VideoCommandOptions) => {
+  await runVideoAction({
+    format: options.format as VideoFormat,
+    ...(options.output === undefined ? {} : { output: options.output }),
+    url: options.url
+  });
+};
+
 export const registerTranscriptsCommand = (program: Command) => {
-  program
+  const transcripts = program
     .command("transcripts")
-    .description("Fetch and persist YouTube transcripts.")
+    .description("Fetch and persist YouTube transcripts.");
+
+  transcripts
     .command("fetch")
     .description("Fetch transcripts for a YouTube channel.")
     .requiredOption("--channel <value>", "Channel URL, @handle, username URL, or channel ID.")
@@ -60,4 +81,16 @@ export const registerTranscriptsCommand = (program: Command) => {
     .option("--limit <number>", "Maximum number of ready transcripts to return.", "25")
     .option("--max-videos-inspected <number>", "Maximum number of uploads to inspect.", "100")
     .action(fetchAction);
+
+  transcripts
+    .command("video")
+    .description("Fetch transcript for a single YouTube video URL or ID.")
+    .requiredOption("--url <value>", "Video URL (youtu.be / youtube.com) or 11-char video ID.")
+    .addOption(
+      new Option("--format <type>", "Output format.")
+        .choices([...VIDEO_FORMATS])
+        .default("markdown")
+    )
+    .option("-o, --output <path>", "Write output to file instead of stdout.")
+    .action(videoAction);
 };
