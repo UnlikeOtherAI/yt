@@ -39,10 +39,6 @@ type ChannelItem = {
   };
 };
 
-type SearchItem = {
-  snippet?: { channelId?: string };
-};
-
 type ListResponse<T> = {
   items?: T[];
   nextPageToken?: string;
@@ -75,6 +71,15 @@ export type VideoDetails = {
   viewCount: number | null;
 };
 
+export type SearchResult = {
+  channelId: string;
+  channelTitle: string;
+  description: string;
+  publishedAt: string;
+  title: string;
+  videoId: string;
+};
+
 export class YoutubeApi {
   readonly #apiKey: string;
 
@@ -99,6 +104,51 @@ export class YoutubeApi {
     }
 
     return (await response.json()) as T;
+  }
+
+  async searchVideos(args: {
+    channelId?: string;
+    maxResults?: number;
+    order?: string;
+    publishedAfter?: string;
+    query: string;
+  }): Promise<SearchResult[]> {
+    const response = await this.#get<ListResponse<{
+      id?: { videoId?: string };
+      snippet?: {
+        channelId?: string;
+        channelTitle?: string;
+        description?: string;
+        publishedAt?: string;
+        title?: string;
+      };
+    }>>("search", {
+      channelId: args.channelId,
+      maxResults: String(args.maxResults ?? 5),
+      order: args.order ?? "relevance",
+      part: "snippet",
+      publishedAfter: args.publishedAfter,
+      q: args.query,
+      type: "video"
+    });
+
+    return (response.items ?? []).flatMap((item) => {
+      const videoId = item.id?.videoId;
+      const snippet = item.snippet;
+
+      if (!videoId || !snippet?.title || !snippet.channelId || !snippet.channelTitle || !snippet.publishedAt) {
+        return [];
+      }
+
+      return [{
+        channelId: snippet.channelId,
+        channelTitle: snippet.channelTitle,
+        description: snippet.description ?? "",
+        publishedAt: snippet.publishedAt,
+        title: snippet.title,
+        videoId
+      }];
+    });
   }
 
   async getPlaylistVideos(
@@ -126,8 +176,9 @@ export class YoutubeApi {
   async getResolvedChannel(
     args: { channelId?: string; customUrl?: string; handle?: string; username?: string }
   ): Promise<ResolvedChannel> {
+    const handle = args.handle ?? (args.customUrl ? `@${args.customUrl}` : undefined);
     const response = await this.#get<ListResponse<ChannelItem>>("channels", {
-      forHandle: args.handle,
+      forHandle: handle,
       forUsername: args.username,
       id: args.channelId,
       part: "snippet,contentDetails,statistics"
@@ -150,21 +201,10 @@ export class YoutubeApi {
       };
     }
 
-    if (args.customUrl) {
-      const search = await this.#get<ListResponse<SearchItem>>("search", {
-        maxResults: "1",
-        part: "snippet",
-        q: args.customUrl,
-        type: "channel"
-      });
-      const channelId = search.items?.[0]?.snippet?.channelId;
-
-      if (channelId) {
-        return this.getResolvedChannel({ channelId });
-      }
-    }
-
-    throw new AppError("Unable to resolve the provided YouTube channel.", EXIT_CODE.runtimeError);
+    throw new AppError(
+      "Unable to resolve the provided YouTube channel. Use a @handle, channel URL, or channel ID.",
+      EXIT_CODE.runtimeError
+    );
   }
 
   async getVideoDetails(videoIds: string[]): Promise<VideoDetails[]> {

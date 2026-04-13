@@ -6,6 +6,7 @@ import { registerArticlesCommand } from "./commands/articles-command.js";
 import { registerChannelsCommand } from "./commands/channels-command.js";
 import { registerMetricsCommand } from "./commands/metrics-command.js";
 import { registerResearchCommand } from "./commands/research-command.js";
+import { registerSearchCommand } from "./commands/search-command.js";
 import { registerTranscriptsCommand } from "./commands/transcripts-command.js";
 import { AppError, EXIT_CODE } from "./errors.js";
 
@@ -44,6 +45,7 @@ registerChannelsCommand(program);
 registerResearchCommand(program);
 registerMetricsCommand(program);
 registerTranscriptsCommand(program);
+registerSearchCommand(program);
 registerArticlesCommand(program);
 
 program.command("help", { isDefault: false }).action(() => {
