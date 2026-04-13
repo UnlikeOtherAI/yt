@@ -11,9 +11,32 @@ import { AppError, EXIT_CODE } from "./errors.js";
 
 const program = new Command();
 
+const CONFIG_HELP = `Configuration  (~/.yt/.env)
+
+  LLM  (required for --format article / markdown):
+    Gemini (default):
+      GEMINI_API_KEY=your-key
+      GEMINI_MODEL=gemini-3.1-pro-preview   (optional)
+
+    OpenAI-compatible (Minimax, OpenAI, etc.):
+      OPENAI_BASE_URL=https://api.minimax.chat/v1
+      OPENAI_API_KEY=your-key
+      OPENAI_MODEL=minimax-m1-mini-remote
+
+    OPENAI_BASE_URL takes precedence over GEMINI_API_KEY when both are set.
+
+  YouTube API  (required for channel commands):
+    YOUTUBE_API_KEY=your-key
+
+  Storage:
+    YT_DATA_DIR=~/.yt   (optional, this is the default)
+
+`;
+
 program
   .name("yt")
   .description("YouTube-first research ingestion CLI.")
+  .addHelpText("before", CONFIG_HELP)
   .showHelpAfterError()
   .showSuggestionAfterError();
 

@@ -103,6 +103,29 @@ If coverage verification fails:
 - keep the raw transcript output
 - optionally emit the best-effort article marked as incomplete
 
+## LLM Configuration
+
+Article generation requires one of the following in `~/.yt/.env`:
+
+**Gemini (default)**
+
+```
+GEMINI_API_KEY=your-key-here
+GEMINI_MODEL=gemini-3.1-pro-preview   # optional, this is the default
+```
+
+**OpenAI-compatible (Minimax, OpenAI, etc.)**
+
+```
+OPENAI_BASE_URL=https://api.minimax.chat/v1
+OPENAI_API_KEY=your-key-here
+OPENAI_MODEL=minimax-m1-mini-remote
+```
+
+`OPENAI_BASE_URL` takes precedence over `GEMINI_API_KEY` when both are set.
+
+Any provider that implements the `/chat/completions` endpoint can be used.
+
 ## Suggested Model Usage
 
 - default model: `gemini-3.1-pro-preview`
