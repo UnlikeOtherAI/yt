@@ -66,7 +66,7 @@ export const registerSearchCommand = (program: Command) => {
     .description("Search YouTube videos. Costs 100 quota units per call.")
     .requiredOption("-q, --query <text>", "Search query.")
     .option("--channel <channelId>", "Restrict to a specific channel ID.")
-    .option("--max-results <number>", "Number of results (1-50).", "5")
+    .option("--max-results <number>", "Number of results (1-50).", "50")
     .option("--order <type>", "Sort order: relevance, date, rating, viewCount.", "date")
     .option("--published-after <date>", "ISO 8601 date, e.g. 2026-04-01T00:00:00Z.")
     .option("--json", "Write structured JSON to stdout.")
