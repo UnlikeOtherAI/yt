@@ -30,7 +30,10 @@ export type AppConfig = {
 };
 
 export const loadConfig = (): AppConfig => {
-  const env = envSchema.parse(process.env);
+  const stripped = Object.fromEntries(
+    Object.entries(process.env).map(([k, v]) => [k, v === "" ? undefined : v])
+  );
+  const env = envSchema.parse(stripped);
   const dataDir = env.YT_DATA_DIR ?? join(homedir(), ".yt");
 
   return {
