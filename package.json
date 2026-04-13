@@ -1,6 +1,6 @@
 {
   "name": "@unlikeotherai/yt",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "CLI for YouTube research ingestion, transcript storage, and article generation.",
   "type": "module",
   "publishConfig": {
