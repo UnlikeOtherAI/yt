@@ -6,6 +6,7 @@ import { createLogger } from "./logger.js";
 import { createRepositories } from "./repositories.js";
 import { ArticleGenerator } from "./services/article-generator.js";
 import { ChannelLifecycleService } from "./services/channel-lifecycle-service.js";
+import { createLlmClient } from "./services/llm-client.js";
 import { MetricsRefreshService } from "./services/metrics-refresh-service.js";
 import { ResearchSyncService } from "./services/research-sync-service.js";
 import { TranscriptProvider } from "./services/transcript-provider.js";
@@ -37,7 +38,7 @@ export const createAppContext = (): AppContext => {
 
   const youtubeApi = new YoutubeApi(youtubeApiKey);
   const transcriptProvider = new TranscriptProvider(config.dataDir);
-  const articleGenerator = new ArticleGenerator(config.geminiApiKey, config.geminiModel);
+  const articleGenerator = new ArticleGenerator(createLlmClient(config));
 
   return {
     articleGenerator,

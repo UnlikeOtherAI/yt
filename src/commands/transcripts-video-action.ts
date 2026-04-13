@@ -4,6 +4,8 @@ import type { AppConfig } from "../config.js";
 import { loadConfig } from "../config.js";
 import { AppError, EXIT_CODE } from "../errors.js";
 import { ArticleGenerator } from "../services/article-generator.js";
+import { createLlmClient } from "../services/llm-client.js";
+import type { LlmClient } from "../services/llm-client.js";
 import {
   formatMarkdownDocument,
   formatParagraphs,
@@ -86,25 +88,27 @@ const fetchTranscriptOrFail = async (
   }
 };
 
-const requireGeminiKey = (config: AppConfig, format: VideoFormat): string => {
-  if (!config.geminiApiKey) {
+const requireLlmClient = (config: AppConfig, format: VideoFormat): LlmClient => {
+  const client = createLlmClient(config);
+
+  if (!client) {
     throw new AppError(
-      `--format ${format} requires GEMINI_API_KEY. Set it in ~/.yt/.env or ` +
-        `use --format paragraphs for a no-LLM alternative.`,
+      `--format ${format} requires an LLM API. Set GEMINI_API_KEY or ` +
+        `OPENAI_BASE_URL + OPENAI_API_KEY + OPENAI_MODEL in ~/.yt/.env, ` +
+        `or use --format paragraphs for a no-LLM alternative.`,
       EXIT_CODE.usageError
     );
   }
 
-  return config.geminiApiKey;
+  return client;
 };
 
 const renderArticle = async (
-  config: AppConfig,
+  client: LlmClient | undefined,
   metadata: VideoMetadata,
   transcript: TranscriptResult
 ): Promise<string> => {
-  const apiKey = requireGeminiKey(config, "article");
-  const generator = new ArticleGenerator(apiKey, config.geminiModel);
+  const generator = new ArticleGenerator(client);
   const { article } = await generator.generate({
     title: metadata.title ?? `YouTube video ${metadata.videoId}`,
     transcriptText: transcript.text
@@ -114,6 +118,7 @@ const renderArticle = async (
 };
 
 const renderForFormat = async (args: {
+  client: LlmClient | undefined;
   config: AppConfig;
   format: VideoFormat;
   metadata: VideoMetadata;
@@ -121,7 +126,7 @@ const renderForFormat = async (args: {
 }): Promise<string> => {
   switch (args.format) {
     case "markdown": {
-      const body = await renderArticle(args.config, args.metadata, args.transcript);
+      const body = await renderArticle(args.client, args.metadata, args.transcript);
       return formatMarkdownDocument({
         body,
         metadata: args.metadata,
@@ -129,7 +134,7 @@ const renderForFormat = async (args: {
       });
     }
     case "article":
-      return `${await renderArticle(args.config, args.metadata, args.transcript)}\n`;
+      return `${await renderArticle(args.client, args.metadata, args.transcript)}\n`;
     case "paragraphs":
       return `${formatParagraphs(args.transcript)}\n`;
     case "text":
@@ -167,15 +172,15 @@ const emitOutput = async (
 export const runVideoAction = async (options: VideoActionOptions): Promise<void> => {
   const videoId = parseVideoInput(options.url);
   const config = loadConfig();
-
-  if (LLM_FORMATS.has(options.format)) {
-    requireGeminiKey(config, options.format);
-  }
+  const client = LLM_FORMATS.has(options.format)
+    ? requireLlmClient(config, options.format)
+    : undefined;
 
   const provider = new TranscriptProvider(config.dataDir);
   const transcript = await fetchTranscriptOrFail(provider, videoId);
   const metadata = await fetchMetadata(config, videoId);
   const output = await renderForFormat({
+    client,
     config,
     format: options.format,
     metadata,

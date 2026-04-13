@@ -1,11 +1,10 @@
 import { AppError, EXIT_CODE } from "../errors.js";
+import type { LlmClient } from "./llm-client.js";
 
 type CoverageReport = {
   notes: string[];
   passed: boolean;
 };
-
-const DEFAULT_GEMINI_MODEL = "gemini-3.1-pro-preview";
 
 const ARTICLE_SYSTEM_PROMPT = `
 You convert raw YouTube transcripts into readable article-form prose without
@@ -56,53 +55,6 @@ Return compact JSON only with:
 - notes: string[]
 `;
 
-const callGemini = async (args: {
-  apiKey: string;
-  model: string;
-  prompt: string;
-  responseMimeType?: string;
-  systemInstruction: string;
-}): Promise<string> => {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${args.model}:generateContent?key=${args.apiKey}`,
-    {
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: args.prompt }]
-          }
-        ],
-        systemInstruction: {
-          parts: [{ text: args.systemInstruction }]
-        },
-        generationConfig: args.responseMimeType
-          ? { responseMimeType: args.responseMimeType }
-          : undefined
-      }),
-      headers: {
-        "Content-Type": "application/json"
-      },
-      method: "POST"
-    }
-  );
-
-  if (!response.ok) {
-    throw new AppError(await response.text(), EXIT_CODE.upstreamFailure);
-  }
-
-  const json = (await response.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-
-  const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!text) {
-    throw new AppError("Gemini returned an empty response.", EXIT_CODE.upstreamFailure);
-  }
-
-  return text;
-};
-
 const createRewritePrompt = (title: string, transcriptText: string) => `
 Rewrite the transcript into article-form prose.
 
@@ -130,39 +82,33 @@ ${article}
 `;
 
 export class ArticleGenerator {
-  readonly #apiKey: string | undefined;
-  readonly #model: string;
+  readonly #client: LlmClient | undefined;
 
-  public constructor(apiKey?: string, model = DEFAULT_GEMINI_MODEL) {
-    this.#apiKey = apiKey;
-    this.#model = model;
+  public constructor(client?: LlmClient) {
+    this.#client = client;
   }
 
   public async generate(args: {
     title: string;
     transcriptText: string;
   }): Promise<{ article: string; coverageReport: CoverageReport }> {
-    const apiKey = this.#apiKey;
-
-    if (!apiKey) {
+    if (!this.#client) {
       throw new AppError(
-        "GEMINI_API_KEY is required for article generation.",
+        "Article generation requires an LLM API. Set GEMINI_API_KEY or " +
+          "OPENAI_BASE_URL + OPENAI_API_KEY + OPENAI_MODEL in ~/.yt/.env.",
         EXIT_CODE.runtimeError
       );
     }
 
-    const article = await callGemini({
-      apiKey,
-      model: this.#model,
-      prompt: createRewritePrompt(args.title, args.transcriptText),
-      systemInstruction: ARTICLE_SYSTEM_PROMPT
+    const article = await this.#client.call({
+      systemPrompt: ARTICLE_SYSTEM_PROMPT,
+      userPrompt: createRewritePrompt(args.title, args.transcriptText)
     });
-    const coverageResponse = await callGemini({
-      apiKey,
-      model: this.#model,
-      prompt: createCoveragePrompt(article, args.transcriptText),
-      responseMimeType: "application/json",
-      systemInstruction: COVERAGE_SYSTEM_PROMPT
+
+    const coverageResponse = await this.#client.call({
+      jsonMode: true,
+      systemPrompt: COVERAGE_SYSTEM_PROMPT,
+      userPrompt: createCoveragePrompt(article, args.transcriptText)
     });
 
     return {
