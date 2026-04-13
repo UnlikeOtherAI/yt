@@ -92,7 +92,7 @@ export class VideosRepository {
 
   public findByVideoId(videoId: string): VideoRecord | null {
     const row = this.#database
-      .prepare<[string], VideoRow | undefined>(
+      .prepare(
         `
         SELECT *
         FROM videos
@@ -100,7 +100,7 @@ export class VideosRepository {
         LIMIT 1
       `
       )
-      .get(videoId);
+      .get(videoId) as VideoRow | undefined;
 
     return row ? toVideoRecord(row) : null;
   }

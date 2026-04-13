@@ -34,7 +34,6 @@
   },
   "dependencies": {
     "@google/genai": "^1.17.0",
-    "better-sqlite3": "^11.8.1",
     "commander": "^14.0.0",
     "dotenv": "^16.6.1",
     "p-limit": "^7.1.1",
@@ -44,7 +43,6 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
-    "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^24.3.0",
     "eslint": "^9.35.0",
     "eslint-import-resolver-typescript": "^4.4.4",
