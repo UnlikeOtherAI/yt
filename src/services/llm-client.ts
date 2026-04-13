@@ -88,11 +88,21 @@ export class OpenAIClient implements LlmClient {
     const json = (await response.json()) as {
       choices?: { message?: { content?: string } }[];
     };
-    const text = json.choices?.[0]?.message?.content;
+    const raw = json.choices?.[0]?.message?.content;
+
+    if (!raw) {
+      throw new AppError(
+        "OpenAI-compatible API returned an empty response.",
+        EXIT_CODE.upstreamFailure
+      );
+    }
+
+    // Strip reasoning-model thinking blocks (<think>...</think>) before returning.
+    const text = raw.replace(/<think>[\s\S]*?<\/think>\s*/gu, "").trim();
 
     if (!text) {
       throw new AppError(
-        "OpenAI-compatible API returned an empty response.",
+        "OpenAI-compatible API returned an empty response after stripping think blocks.",
         EXIT_CODE.upstreamFailure
       );
     }
